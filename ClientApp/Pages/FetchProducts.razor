@@ -1,0 +1,80 @@
+@page "/fetchproducts"
+@* Copilot recommended injecting HttpClient for making API calls *@
+@inject HttpClient Http
+
+<h3>Product List</h3>
+
+<ul>
+   @* Copilot suggested using null-coalescing pattern for safe data display *@
+   @if (products != null)
+    {
+        foreach (var product in products)
+        {
+            <li>@product.Name - $@product.Price</li>
+        }
+    }
+    else if (isLoading)
+    {
+        <li>Loading...</li>
+    }
+    else
+    {
+        <li>Failed to load products. Please try again.</li>
+    }
+</ul>
+
+@code {
+    @* Copilot suggested caching products in memory to avoid redundant API calls *@
+    private static Product[]? cachedProducts;
+    private Product[]? products;
+    private bool isLoading = true;
+
+    @* Copilot helped implement async initialization with proper error handling *@
+    protected override async Task OnInitializedAsync()
+    {
+        // Use cached products if available to reduce API calls
+        if (cachedProducts != null)
+        {
+            products = cachedProducts;
+            isLoading = false;
+            return;
+        }
+
+        try
+        {
+            @* Copilot suggested GetFromJsonAsync<T> for automatic JSON deserialization *@
+            products = await Http.GetFromJsonAsync<Product[]>("/api/productlist");
+            
+            // Cache the products for subsequent component initializations
+            if (products != null)
+            {
+                cachedProducts = products;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching products: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    @* Copilot helped structure the Product class to match the API response *@
+    public class Product
+    {
+        public int Id { get; set; }
+        public string? Name { get; set; }
+        public decimal Price { get; set; }
+        public int Stock { get; set; }
+        public Category? Category { get; set; }
+    }
+
+    @* Copilot suggested creating a separate Category class for better organization *@
+    public class Category
+    {
+        public int Id { get; set; }
+        public string? Name { get; set; }
+    }
+}
